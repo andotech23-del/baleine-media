@@ -1,0 +1,19 @@
+{
+  "name": "cordia-integrated-health",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Cordia-integrated healthcare platform monorepo",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace web run dev",
+    "dev:api": "npm --workspace api run dev",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "seed": "npm --workspace api run seed"
+  }
+}
