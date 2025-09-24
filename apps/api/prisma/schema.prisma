@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Patient {
+  id             String       @id @default(uuid())
+  firstName      String
+  lastName       String
+  email          String       @unique
+  phone          String
+  dateOfBirth    DateTime
+  insuranceType  InsuranceType
+  appointments   Appointment[]
+  invoices       Invoice[]
+  messages       Message[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Staff {
+  id         String   @id @default(uuid())
+  firstName  String
+  lastName   String
+  email      String   @unique
+  role       Role
+  password   String
+  notes      SoapNote[] @relation("AuthorNotes")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Appointment {
+  id             String        @id @default(uuid())
+  patient        Patient       @relation(fields: [patientId], references: [id])
+  patientId      String
+  provider       Staff         @relation(fields: [providerId], references: [id])
+  providerId     String
+  startTime      DateTime
+  endTime        DateTime
+  status         AppointmentStatus
+  location       String
+  reason         String?
+  messages       Message[]
+  invoice        Invoice?
+  soapNotes      SoapNote[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Message {
+  id             String           @id @default(uuid())
+  appointment    Appointment?     @relation(fields: [appointmentId], references: [id])
+  appointmentId  String?
+  patient        Patient          @relation(fields: [patientId], references: [id])
+  patientId      String
+  channel        Channel
+  direction      MessageDirection
+  body           String
+  status         MessageStatus
+  createdAt      DateTime         @default(now())
+}
+
+model Invoice {
+  id             String      @id @default(uuid())
+  appointment    Appointment @relation(fields: [appointmentId], references: [id])
+  appointmentId  String
+  patient        Patient     @relation(fields: [patientId], references: [id])
+  patientId      String
+  amount         Float
+  status         InvoiceStatus
+  dueDate        DateTime
+  estimateBreakdown Json
+  payments       Payment[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Payment {
+  id                String      @id @default(uuid())
+  invoice           Invoice     @relation(fields: [invoiceId], references: [id])
+  invoiceId         String
+  amount            Float
+  status            PaymentStatus
+  provider          PaymentProvider
+  externalReference String?
+  createdAt         DateTime    @default(now())
+}
+
+model SoapNote {
+  id            String      @id @default(uuid())
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  appointmentId String
+  author        Staff       @relation("AuthorNotes", fields: [authorId], references: [id])
+  authorId      String
+  content       Json
+  status        SOAPStatus
+  reviewedBy    Staff?      @relation("ReviewerNotes", fields: [reviewerId], references: [id])
+  reviewerId    String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("SOAPNotes")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actorRole  Role?
+  event      String
+  entity     String
+  entityId   String?
+  meta       Json?
+  redacted   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model WebhookEvent {
+  id         String          @id @default(uuid())
+  provider   WebhookProvider
+  eventType  String
+  payload    Json
+  status     WebhookStatus
+  retryCount Int            @default(0)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+enum InsuranceType {
+  MEDICAL
+  ROUTINE
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  PATIENT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  CHECKED_IN
+  NO_SHOW
+  CANCELLED
+}
+
+enum Channel {
+  SMS
+  EMAIL
+}
+
+enum MessageDirection {
+  OUTBOUND
+  INBOUND
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+  RECEIVED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentStatus {
+  INITIATED
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  STRIPE
+}
+
+enum SOAPStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum WebhookProvider {
+  STRIPE
+  TWILIO
+  SENDGRID
+}
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSING
+  SUCCESS
+  FAILED
+}

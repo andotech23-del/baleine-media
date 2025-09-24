@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="Polly.Joanna">Hello {{patientName}}. This is Cordia Health reminding you of your appointment on {{appointmentDate}} at {{appointmentTime}}. Press 1 to confirm, or call us back to reschedule.</Say>
+</Response>

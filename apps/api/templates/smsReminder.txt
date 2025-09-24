@@ -1,0 +1,1 @@
+Reminder: {{patientName}}, your appointment with {{providerName}} is scheduled for {{appointmentDate}}. Reply CONFIRM to keep, RESCHEDULE to change, or STOP to opt out.
