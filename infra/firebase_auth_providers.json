@@ -1,0 +1,15 @@
+{
+  "authorizedDomains": ["cordia.yourdomain.com"],
+  "signIn": {
+    "email": { "enabled": true },
+    "google": { "enabled": true },
+    "phone": { "enabled": true }
+  },
+  "testUsers": [
+    {
+      "email": "doctor@cordia.health",
+      "password": "Cordia123!",
+      "displayName": "Cordia Demo Doctor"
+    }
+  ]
+}
