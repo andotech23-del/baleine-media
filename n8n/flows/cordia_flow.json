@@ -1,0 +1,233 @@
+{
+  "name": "Cordia Healthcare Automation",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "New Appointment Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "parameters": {
+        "path": "cordia/appointments/new",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Send SMS Reminder",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 2,
+      "position": [500, 200],
+      "parameters": {
+        "operation": "send",
+        "from": "={{$json[\"twilioFrom\"]}}",
+        "to": "={{$json[\"patient\"][\"phone\"]}}",
+        "message": "={{$json[\"reminderMessage\"]}}"
+      }
+    },
+    {
+      "id": "3",
+      "name": "Schedule Reminders",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [350, 300],
+      "parameters": {
+        "functionCode": "const offsets = [7,3,1];\nreturn offsets.map(days => ({ json: { ...items[0].json, reminderMessage: `Reminder: ${items[0].json.appointment.summary} in ${days} day(s).`, scheduleOffsetDays: days }}));"
+      }
+    },
+    {
+      "id": "4",
+      "name": "Appointment Complete Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 500],
+      "parameters": {
+        "path": "cordia/appointments/completed",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "5",
+      "name": "Invoke Scribe Bot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [450, 500],
+      "parameters": {
+        "url": "={{$json[\"agents\"][\"scribe\"]}}/run",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "6",
+      "name": "Invoke Billing Bot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [700, 500],
+      "parameters": {
+        "url": "={{$json[\"agents\"][\"billing\"]}}/run",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "7",
+      "name": "Save Billing to Firestore",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [950, 500],
+      "parameters": {
+        "url": "={{$json[\"backend\"]}}/api/billing",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "8",
+      "name": "Notify Billing Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1200, 500],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#cordia-billing",
+        "text": "={{`Billing code ${$json.job_id} saved for ${$json.patient_id}`}}"
+      }
+    },
+    {
+      "id": "9",
+      "name": "Glasses Ready Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 700],
+      "parameters": {
+        "path": "cordia/vision/ready",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "10",
+      "name": "Invoke Vision Bot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [450, 700],
+      "parameters": {
+        "url": "={{$json[\"agents\"][\"vision\"]}}/run",
+        "method": "POST",
+        "jsonParameters": true
+      }
+    },
+    {
+      "id": "11",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [700, 700],
+      "parameters": {
+        "operation": "send",
+        "fromEmail": "={{$json[\"notifications\"][\"fromEmail\"]}}",
+        "toList": "={{$json[\"patient\"][\"email\"]}}",
+        "subject": "Your eyewear is ready",
+        "message": "={{$json.message_preview}}"
+      }
+    },
+    {
+      "id": "12",
+      "name": "Send SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 2,
+      "position": [950, 700],
+      "parameters": {
+        "operation": "send",
+        "from": "={{$json[\"twilioFrom\"]}}",
+        "to": "={{$json[\"patient\"][\"phone\"]}}",
+        "message": "={{$json.message_preview}}"
+      }
+    },
+    {
+      "id": "13",
+      "name": "Weekly Care Plan Cron",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [200, 900],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyWeek",
+              "weeksInterval": 1,
+              "weekday": "monday"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "14",
+      "name": "Invoke Care Bot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [450, 900],
+      "parameters": {
+        "url": "={{$json[\"agents\"][\"care\"]}}/run",
+        "method": "POST",
+        "jsonParameters": true
+      }
+    },
+    {
+      "id": "15",
+      "name": "Care Reminder SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 2,
+      "position": [700, 900],
+      "parameters": {
+        "operation": "send",
+        "from": "={{$json[\"twilioFrom\"]}}",
+        "to": "={{$json.patient.phone}}",
+        "message": "={{$json.reminder}}"
+      }
+    }
+  ],
+  "connections": {
+    "New Appointment Webhook": {
+      "main": [[{"node": "Schedule Reminders", "type": "main", "index": 0}]]
+    },
+    "Schedule Reminders": {
+      "main": [[{"node": "Send SMS Reminder", "type": "main", "index": 0}]]
+    },
+    "Appointment Complete Webhook": {
+      "main": [[{"node": "Invoke Scribe Bot", "type": "main", "index": 0}]]
+    },
+    "Invoke Scribe Bot": {
+      "main": [[{"node": "Invoke Billing Bot", "type": "main", "index": 0}]]
+    },
+    "Invoke Billing Bot": {
+      "main": [[{"node": "Save Billing to Firestore", "type": "main", "index": 0}]]
+    },
+    "Save Billing to Firestore": {
+      "main": [[{"node": "Notify Billing Slack", "type": "main", "index": 0}]]
+    },
+    "Glasses Ready Webhook": {
+      "main": [[{"node": "Invoke Vision Bot", "type": "main", "index": 0}]]
+    },
+    "Invoke Vision Bot": {
+      "main": [[{"node": "Send Email", "type": "main", "index": 0}]]
+    },
+    "Send Email": {
+      "main": [[{"node": "Send SMS", "type": "main", "index": 0}]]
+    },
+    "Weekly Care Plan Cron": {
+      "main": [[{"node": "Invoke Care Bot", "type": "main", "index": 0}]]
+    },
+    "Invoke Care Bot": {
+      "main": [[{"node": "Care Reminder SMS", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "timezone": "America/Los_Angeles"
+  }
+}

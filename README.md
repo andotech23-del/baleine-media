@@ -1,85 +1,96 @@
-# Cordia Integrated Health MVP
+# Cordia Healthcare Automation Platform
 
-An initial JavaScript-based MVP for an integrated healthcare operations platform that unifies scheduling, engagement, billing and AI-assisted documentation.
+Cordia is a SaaS automation suite for modern optometry and multispecialty clinics. It orchestrates AI agents, workflow
+automation, and a multi-tenant portal so teams can capture rich visit summaries, sync billing, and keep patients informed in
+real-time.
 
-## Monorepo structure
+## Repository layout
 
 ```
-apps/
-  api/        # Express + Prisma API
-  web/        # React front-end
-packages/
-  types/      # Shared Zod schemas
+agents/           # Cloud Run ready AI microservices (scribe, billing, vision, care)
+backend/          # FastAPI gateway connecting Firebase Auth, Firestore, Stripe, Twilio, Slack
+frontend/         # Next.js 14 web experience for providers, admins, and patients
+infra/            # Terraform, Firestore security rules, Firebase Auth configuration
+n8n/flows/        # Exportable n8n workflow for appointment + care automations
+.github/workflows # CI/CD pipelines
 ```
+
+## Features
+
+- **Agentic AI services**: Four FastAPI-powered agents (`cordia-*`) expose `/run` and `/status` for summarisation,
+  billing code extraction, vision notifications, and care plan orchestration.
+- **Unified API**: Backend FastAPI service proxies agent calls, persists data in Firestore, and validates requests via
+  Firebase Authentication.
+- **Next.js Frontend**: Provider dashboard, appointment views, billing console, care plan manager, and patient portal with
+  mock data ready for customization.
+- **Stripe monetization**: Predefined Basic, Team, and Enterprise plan scaffolding with hooks for invoices and customer
+  portal embedding.
+- **Workflow automation**: n8n flow covering reminders, agent triggers, Slack/Gmail/Twilio notifications, and weekly care
+  nudges.
+- **GCP native**: Cloud Run deployment scripts, Firestore indexes/rules, and GitHub Actions pipeline.
 
 ## Getting started
 
-1. Install dependencies (requires Node.js 20+):
+1. **Clone and install dependencies**
+   ```bash
+   npm install --prefix frontend
+   python -m venv .venv && source .venv/bin/activate
+   pip install -r backend/requirements.txt
+   ```
 
-```bash
-npm install
-```
+2. **Configure environment**
+   - Create a Firebase project, enable Firestore + Authentication, and download service account credentials.
+   - Set the following environment variables for local development:
+     ```bash
+     export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+     export FIREBASE_PROJECT_ID=<project-id>
+     export STRIPE_API_KEY=<test-key>
+     export TWILIO_ACCOUNT_SID=<sid>
+     export TWILIO_AUTH_TOKEN=<token>
+     export SLACK_BOT_TOKEN=<token>
+     export GMAIL_APP_PASSWORD=<app-password>
+     ```
 
-2. Copy `.env.example` to `.env` and adjust secrets.
+3. **Run services locally**
+   ```bash
+   # Backend
+   uvicorn app.main:app --reload --app-dir backend/app --port 8080
 
-3. Start local services with Docker Compose:
+   # Agents (example)
+   uvicorn main:app --app-dir agents/cordia-scribe-bot --port 8010
+   ```
+   Next.js frontend can be started with `npm run dev --prefix frontend`.
 
-```bash
-cd docker
-docker compose up --build
-```
-
-The API is available at `http://localhost:4000`, the web app at `http://localhost:3000`.
-
-### Database
-
-Use Prisma to manage migrations:
-
-```bash
-npm --workspace api run migrate
-npm --workspace api run seed
-```
-
-### Background jobs
-
-Reminder, dunning, and webhook retry workers load automatically with the API. Inspect Redis to monitor queues.
-
-### Webhooks
-
-Simulate Stripe webhook delivery:
-
-```bash
-curl -X POST http://localhost:4000/api/billing/stripe/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"type":"checkout.session.completed","data":{"object":{"metadata":{"invoiceId":"inv_seed"},"amount_total":5000,"id":"cs_test"}}}'
-```
-
-### Security notes
-
-- JWT authentication with role-based access (Admin/Staff/Patient).
-- Helmet, CORS, rate limiting, and audit logging baked in.
-- HIPAA-aware logging with optional PII redaction toggle.
-
-## Testing
-
-Run API tests:
-
-```bash
-npm --workspace api test
-```
-
-Run web tests:
-
-```bash
-npm --workspace web test
-```
+4. **Automation testing**
+   - Load `n8n/flows/cordia_flow.json` into an n8n instance and update Webhook URLs to point at your deployed backend/agent
+     endpoints.
 
 ## Deployment
 
-- Production ready Dockerfiles for both API and web.
-- Environment variables compatible with AWS/Azure/GCP container services.
-- Redis (BullMQ) and PostgreSQL expected.
+- **Cloud Run**: Use the Terraform module in `infra/terraform` to provision Cloud Run services and Firestore. Update
+  `terraform.tfvars` with container image references produced by Cloud Build or `deploy.sh`.
+- **CI/CD**: GitHub Actions workflow (`.github/workflows/deploy.yml`) authenticates with GCP and runs `deploy.sh` for each
+  microservice on pushes to `main`.
+- **Manual deploy**: `./deploy.sh <service>` builds, pushes, and deploys a selected service (`backend`, `scribe`, `billing`,
+  `vision`, `care`, `frontend`).
 
-## Templates
+## Firestore security & schema
 
-Reusable notification templates live in `apps/api/templates` for SMS, email, Stripe invoice, and Twilio voice reminders.
+- Security rules: `infra/firestore.rules`
+- Composite indexes: `infra/firestore.indexes.json`
+- Document schema reference: `infra/firestore-schema.md`
+
+## Testing
+
+```bash
+pytest backend/tests
+```
+
+Frontend testing can be added via Playwright or Cypress; placeholders are ready for integration.
+
+## Roadmap for customization
+
+- Replace mock agent logic with Vertex AI or PaLM calls and persist results back to Firestore.
+- Wire Stripe webhooks to synchronize subscription state and embed the customer portal within `/profile`.
+- Connect Airtable + Notion webhooks via n8n to sync intake forms and care team notes.
+- Extend EPM integration (`backend/app/services/epm.py`) with real credentials for Kareo or DrChrono.
