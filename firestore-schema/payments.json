@@ -1,0 +1,280 @@
+{
+  "collection": "payments",
+  "description": "Manages billing, payments, and financial transactions between patients and the healthcare platform. Supports multiple payment methods and insurance claims.",
+  "documentId": "Auto-generated payment ID",
+  "schema": {
+    "patientId": {
+      "type": "string",
+      "description": "Reference to patient document ID",
+      "required": true,
+      "indexed": true
+    },
+    "patientName": {
+      "type": "string",
+      "description": "Denormalized patient name",
+      "required": true
+    },
+    "appointmentId": {
+      "type": "string",
+      "description": "Reference to related appointment",
+      "indexed": true
+    },
+    "invoiceNumber": {
+      "type": "string",
+      "description": "Unique invoice number",
+      "required": true,
+      "unique": true,
+      "indexed": true
+    },
+    "type": {
+      "type": "string",
+      "enum": ["appointment-fee", "copay", "deductible", "procedure", "medication", "lab-test", "other"],
+      "required": true,
+      "indexed": true
+    },
+    "amount": {
+      "type": "object",
+      "description": "Payment amount details",
+      "required": true,
+      "fields": {
+        "total": {
+          "type": "number",
+          "description": "Total charge amount in dollars",
+          "required": true
+        },
+        "insurance": {
+          "type": "number",
+          "description": "Amount covered by insurance",
+          "default": 0
+        },
+        "patientResponsibility": {
+          "type": "number",
+          "description": "Amount patient owes",
+          "required": true
+        },
+        "paid": {
+          "type": "number",
+          "description": "Amount already paid",
+          "default": 0
+        },
+        "balance": {
+          "type": "number",
+          "description": "Outstanding balance",
+          "required": true
+        },
+        "currency": {
+          "type": "string",
+          "default": "USD"
+        }
+      }
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of services rendered",
+      "required": true
+    },
+    "serviceDate": {
+      "type": "timestamp",
+      "description": "Date service was provided",
+      "required": true,
+      "indexed": true
+    },
+    "dueDate": {
+      "type": "timestamp",
+      "description": "Payment due date",
+      "indexed": true
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "processing", "paid", "partially-paid", "overdue", "cancelled", "refunded"],
+      "default": "pending",
+      "required": true,
+      "indexed": true
+    },
+    "insurance": {
+      "type": "object",
+      "description": "Insurance claim information",
+      "fields": {
+        "provider": {
+          "type": "string",
+          "description": "Insurance provider name"
+        },
+        "claimNumber": {
+          "type": "string",
+          "description": "Insurance claim number"
+        },
+        "claimStatus": {
+          "type": "string",
+          "enum": ["submitted", "processing", "approved", "denied", "appealed"]
+        },
+        "submittedAt": {
+          "type": "timestamp"
+        },
+        "processedAt": {
+          "type": "timestamp"
+        },
+        "denialReason": {
+          "type": "string"
+        }
+      }
+    },
+    "paymentMethod": {
+      "type": "object",
+      "description": "Payment method details",
+      "fields": {
+        "type": {
+          "type": "string",
+          "enum": ["credit-card", "debit-card", "bank-transfer", "cash", "check", "insurance"]
+        },
+        "lastFour": {
+          "type": "string",
+          "description": "Last 4 digits of card/account"
+        },
+        "brand": {
+          "type": "string",
+          "description": "Card brand (Visa, Mastercard, etc.)"
+        }
+      }
+    },
+    "transactions": {
+      "type": "array",
+      "description": "Payment transaction history",
+      "items": {
+        "type": "object",
+        "fields": {
+          "transactionId": "string",
+          "amount": "number",
+          "method": "string",
+          "status": "string",
+          "processedAt": "timestamp",
+          "notes": "string"
+        }
+      }
+    },
+    "billingAddress": {
+      "type": "object",
+      "fields": {
+        "street": "string",
+        "city": "string",
+        "state": "string",
+        "zipCode": "string",
+        "country": "string"
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes about payment or billing"
+    },
+    "reminders": {
+      "type": "array",
+      "description": "Payment reminder timestamps",
+      "items": "timestamp"
+    },
+    "refund": {
+      "type": "object",
+      "description": "Refund information if applicable",
+      "fields": {
+        "amount": "number",
+        "reason": "string",
+        "processedAt": "timestamp",
+        "refundTransactionId": "string"
+      }
+    },
+    "createdAt": {
+      "type": "timestamp",
+      "description": "Payment record creation timestamp",
+      "required": true,
+      "serverTimestamp": true,
+      "indexed": true
+    },
+    "updatedAt": {
+      "type": "timestamp",
+      "description": "Last update timestamp",
+      "required": true,
+      "serverTimestamp": true
+    }
+  },
+  "indexes": [
+    {
+      "fields": ["patientId", "status"],
+      "order": ["ascending", "ascending"]
+    },
+    {
+      "fields": ["patientId", "createdAt"],
+      "order": ["ascending", "descending"]
+    },
+    {
+      "fields": ["status", "dueDate"],
+      "order": ["ascending", "ascending"]
+    },
+    {
+      "fields": ["invoiceNumber"],
+      "unique": true
+    },
+    {
+      "fields": ["appointmentId"],
+      "order": "ascending"
+    },
+    {
+      "fields": ["serviceDate"],
+      "order": "descending"
+    }
+  ],
+  "securityRules": {
+    "read": "Patients can read their own payment records; providers and billing staff with proper permissions",
+    "write": "Billing staff and system only; patients cannot directly modify",
+    "create": "System and billing staff only"
+  },
+  "sampleDocument": {
+    "patientId": "patient-doc-id-123",
+    "patientName": "John Doe",
+    "appointmentId": "appt-doc-id-789",
+    "invoiceNumber": "INV-2024-0315-001",
+    "type": "appointment-fee",
+    "amount": {
+      "total": 150.00,
+      "insurance": 120.00,
+      "patientResponsibility": 30.00,
+      "paid": 30.00,
+      "balance": 0.00,
+      "currency": "USD"
+    },
+    "description": "Annual physical examination and consultation",
+    "serviceDate": "2024-03-15T09:00:00Z",
+    "dueDate": "2024-04-15T23:59:59Z",
+    "status": "paid",
+    "insurance": {
+      "provider": "Blue Cross Blue Shield",
+      "claimNumber": "CLM-2024-03-15-123",
+      "claimStatus": "approved",
+      "submittedAt": "2024-03-16T10:00:00Z",
+      "processedAt": "2024-03-20T14:00:00Z"
+    },
+    "paymentMethod": {
+      "type": "credit-card",
+      "lastFour": "4242",
+      "brand": "Visa"
+    },
+    "transactions": [
+      {
+        "transactionId": "txn_1234567890",
+        "amount": 30.00,
+        "method": "credit-card",
+        "status": "completed",
+        "processedAt": "2024-03-15T10:30:00Z",
+        "notes": "Copay collected at time of service"
+      }
+    ],
+    "billingAddress": {
+      "street": "123 Main St",
+      "city": "Boston",
+      "state": "MA",
+      "zipCode": "02101",
+      "country": "USA"
+    },
+    "notes": "Insurance covered in full after copay. No balance due.",
+    "reminders": [],
+    "createdAt": "2024-03-15T09:00:00Z",
+    "updatedAt": "2024-03-20T14:30:00Z"
+  }
+}

@@ -1,0 +1,267 @@
+{
+  "collection": "messages",
+  "description": "Secure messaging system for communication between patients and healthcare providers. Supports HIPAA-compliant messaging with read receipts and attachments.",
+  "documentId": "Auto-generated message ID",
+  "schema": {
+    "threadId": {
+      "type": "string",
+      "description": "Groups related messages into conversation threads",
+      "required": true,
+      "indexed": true
+    },
+    "senderId": {
+      "type": "string",
+      "description": "User ID of message sender",
+      "required": true,
+      "indexed": true
+    },
+    "senderName": {
+      "type": "string",
+      "description": "Denormalized sender name",
+      "required": true
+    },
+    "senderType": {
+      "type": "string",
+      "enum": ["patient", "provider", "admin", "system"],
+      "required": true,
+      "indexed": true
+    },
+    "recipientId": {
+      "type": "string",
+      "description": "User ID of message recipient",
+      "required": true,
+      "indexed": true
+    },
+    "recipientName": {
+      "type": "string",
+      "description": "Denormalized recipient name",
+      "required": true
+    },
+    "recipientType": {
+      "type": "string",
+      "enum": ["patient", "provider", "admin", "system"],
+      "required": true
+    },
+    "subject": {
+      "type": "string",
+      "description": "Message subject line (for thread starter)",
+      "required": true
+    },
+    "body": {
+      "type": "string",
+      "description": "Message content",
+      "required": true
+    },
+    "messageType": {
+      "type": "string",
+      "enum": ["general", "appointment", "prescription", "lab-result", "billing", "urgent"],
+      "default": "general",
+      "indexed": true
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["normal", "high", "urgent"],
+      "default": "normal",
+      "indexed": true
+    },
+    "relatedTo": {
+      "type": "object",
+      "description": "References to related documents",
+      "fields": {
+        "appointmentId": {
+          "type": "string"
+        },
+        "noteId": {
+          "type": "string"
+        },
+        "paymentId": {
+          "type": "string"
+        }
+      }
+    },
+    "attachments": {
+      "type": "array",
+      "description": "File attachments",
+      "items": {
+        "type": "object",
+        "fields": {
+          "fileName": "string",
+          "fileUrl": "string",
+          "fileType": "string",
+          "fileSize": "number",
+          "uploadedAt": "timestamp"
+        }
+      }
+    },
+    "status": {
+      "type": "object",
+      "description": "Message delivery and read status",
+      "fields": {
+        "sent": {
+          "type": "boolean",
+          "default": true
+        },
+        "delivered": {
+          "type": "boolean",
+          "default": false
+        },
+        "read": {
+          "type": "boolean",
+          "default": false
+        },
+        "readAt": {
+          "type": "timestamp"
+        }
+      }
+    },
+    "isArchived": {
+      "type": "boolean",
+      "default": false,
+      "indexed": true
+    },
+    "isStarred": {
+      "type": "boolean",
+      "default": false
+    },
+    "notifications": {
+      "type": "object",
+      "description": "Notification preferences and status",
+      "fields": {
+        "email": {
+          "type": "boolean",
+          "default": true
+        },
+        "push": {
+          "type": "boolean",
+          "default": true
+        },
+        "emailSentAt": {
+          "type": "timestamp"
+        },
+        "pushSentAt": {
+          "type": "timestamp"
+        }
+      }
+    },
+    "replyTo": {
+      "type": "string",
+      "description": "Message ID this is replying to"
+    },
+    "editHistory": {
+      "type": "array",
+      "description": "Edit history for message modifications",
+      "items": {
+        "type": "object",
+        "fields": {
+          "editedAt": "timestamp",
+          "previousBody": "string"
+        }
+      }
+    },
+    "deleted": {
+      "type": "object",
+      "description": "Soft delete information",
+      "fields": {
+        "isDeleted": {
+          "type": "boolean",
+          "default": false
+        },
+        "deletedBy": {
+          "type": "string"
+        },
+        "deletedAt": {
+          "type": "timestamp"
+        }
+      }
+    },
+    "createdAt": {
+      "type": "timestamp",
+      "description": "Message creation timestamp",
+      "required": true,
+      "serverTimestamp": true,
+      "indexed": true
+    },
+    "updatedAt": {
+      "type": "timestamp",
+      "description": "Last update timestamp",
+      "required": true,
+      "serverTimestamp": true
+    }
+  },
+  "indexes": [
+    {
+      "fields": ["threadId", "createdAt"],
+      "order": ["ascending", "ascending"]
+    },
+    {
+      "fields": ["senderId", "createdAt"],
+      "order": ["ascending", "descending"]
+    },
+    {
+      "fields": ["recipientId", "createdAt"],
+      "order": ["ascending", "descending"]
+    },
+    {
+      "fields": ["recipientId", "status.read", "createdAt"],
+      "order": ["ascending", "ascending", "descending"]
+    },
+    {
+      "fields": ["threadId", "senderId", "recipientId"],
+      "order": ["ascending", "ascending", "ascending"]
+    },
+    {
+      "fields": ["messageType", "priority", "createdAt"],
+      "order": ["ascending", "descending", "descending"]
+    }
+  ],
+  "securityRules": {
+    "read": "Users can read messages where they are sender or recipient",
+    "write": "Users can send messages and update status of messages they received",
+    "create": "Authenticated users can create messages",
+    "delete": "Soft delete only; users can mark their messages as deleted"
+  },
+  "sampleDocument": {
+    "threadId": "thread-2024-03-20-001",
+    "senderId": "patient-doc-id-123",
+    "senderName": "John Doe",
+    "senderType": "patient",
+    "recipientId": "provider-doc-id-456",
+    "recipientName": "Dr. Sarah Smith",
+    "recipientType": "provider",
+    "subject": "Question about medication side effects",
+    "body": "Hi Dr. Smith, I've been experiencing some mild dizziness since starting the new medication. Is this normal? Should I be concerned?",
+    "messageType": "prescription",
+    "priority": "normal",
+    "relatedTo": {
+      "appointmentId": "appt-doc-id-789",
+      "noteId": "note-doc-id-012"
+    },
+    "attachments": [],
+    "status": {
+      "sent": true,
+      "delivered": true,
+      "read": false
+    },
+    "isArchived": false,
+    "isStarred": false,
+    "notifications": {
+      "email": true,
+      "push": true,
+      "emailSentAt": "2024-03-20T15:00:00Z",
+      "pushSentAt": "2024-03-20T15:00:00Z"
+    },
+    "replyTo": null,
+    "editHistory": [],
+    "deleted": {
+      "isDeleted": false
+    },
+    "createdAt": "2024-03-20T14:55:00Z",
+    "updatedAt": "2024-03-20T14:55:00Z"
+  },
+  "subCollections": {
+    "threads": {
+      "description": "Optional: Use a separate 'threads' collection to group messages",
+      "note": "For better performance with large message volumes, consider a separate threads collection that aggregates thread metadata"
+    }
+  }
+}

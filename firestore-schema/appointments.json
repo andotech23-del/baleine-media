@@ -1,0 +1,196 @@
+{
+  "collection": "appointments",
+  "description": "Manages patient appointments with healthcare providers. Supports scheduling, rescheduling, and cancellation workflows.",
+  "documentId": "Auto-generated appointment ID",
+  "schema": {
+    "patientId": {
+      "type": "string",
+      "description": "Reference to patient document ID",
+      "required": true,
+      "indexed": true
+    },
+    "patientName": {
+      "type": "string",
+      "description": "Denormalized patient name for quick access",
+      "required": true
+    },
+    "providerId": {
+      "type": "string",
+      "description": "Reference to provider document ID",
+      "required": true,
+      "indexed": true
+    },
+    "providerName": {
+      "type": "string",
+      "description": "Denormalized provider name for quick access",
+      "required": true
+    },
+    "appointmentDate": {
+      "type": "timestamp",
+      "description": "Scheduled date and time of appointment",
+      "required": true,
+      "indexed": true
+    },
+    "duration": {
+      "type": "number",
+      "description": "Appointment duration in minutes",
+      "default": 30,
+      "required": true
+    },
+    "type": {
+      "type": "string",
+      "enum": ["in-person", "telehealth", "phone"],
+      "required": true,
+      "indexed": true
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for visit",
+      "required": true
+    },
+    "status": {
+      "type": "string",
+      "enum": ["scheduled", "confirmed", "in-progress", "completed", "cancelled", "no-show"],
+      "default": "scheduled",
+      "required": true,
+      "indexed": true
+    },
+    "location": {
+      "type": "object",
+      "description": "Physical location or telehealth link",
+      "fields": {
+        "type": {
+          "type": "string",
+          "enum": ["clinic", "telehealth", "home-visit"]
+        },
+        "address": {
+          "type": "string"
+        },
+        "room": {
+          "type": "string"
+        },
+        "telehealth": {
+          "type": "object",
+          "fields": {
+            "platform": "string",
+            "meetingLink": "string",
+            "meetingId": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes or special instructions"
+    },
+    "reminders": {
+      "type": "object",
+      "description": "Reminder notification settings",
+      "fields": {
+        "email": {
+          "type": "boolean",
+          "default": true
+        },
+        "sms": {
+          "type": "boolean",
+          "default": true
+        },
+        "sentAt": {
+          "type": "array",
+          "items": "timestamp",
+          "description": "Timestamps of sent reminders"
+        }
+      }
+    },
+    "checkinTime": {
+      "type": "timestamp",
+      "description": "Patient check-in timestamp"
+    },
+    "checkoutTime": {
+      "type": "timestamp",
+      "description": "Appointment completion timestamp"
+    },
+    "cancellation": {
+      "type": "object",
+      "description": "Cancellation details if applicable",
+      "fields": {
+        "cancelledBy": {
+          "type": "string",
+          "enum": ["patient", "provider", "system"]
+        },
+        "cancelledAt": {
+          "type": "timestamp"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "createdAt": {
+      "type": "timestamp",
+      "description": "Appointment creation timestamp",
+      "required": true,
+      "serverTimestamp": true
+    },
+    "updatedAt": {
+      "type": "timestamp",
+      "description": "Last update timestamp",
+      "required": true,
+      "serverTimestamp": true
+    }
+  },
+  "indexes": [
+    {
+      "fields": ["patientId", "appointmentDate"],
+      "order": ["ascending", "descending"]
+    },
+    {
+      "fields": ["providerId", "appointmentDate"],
+      "order": ["ascending", "ascending"]
+    },
+    {
+      "fields": ["status", "appointmentDate"],
+      "order": ["ascending", "ascending"]
+    },
+    {
+      "fields": ["appointmentDate", "status"],
+      "order": ["ascending", "ascending"]
+    },
+    {
+      "fields": ["providerId", "status", "appointmentDate"],
+      "order": ["ascending", "ascending", "ascending"]
+    }
+  ],
+  "securityRules": {
+    "read": "Patients can read their own appointments; providers can read their scheduled appointments",
+    "write": "Patients can create/update their appointments; providers can update appointment status",
+    "delete": "No direct deletion; use status='cancelled' instead"
+  },
+  "sampleDocument": {
+    "patientId": "patient-doc-id-123",
+    "patientName": "John Doe",
+    "providerId": "provider-doc-id-456",
+    "providerName": "Dr. Sarah Smith",
+    "appointmentDate": "2024-04-15T10:00:00Z",
+    "duration": 30,
+    "type": "telehealth",
+    "reason": "Annual checkup and medication review",
+    "status": "scheduled",
+    "location": {
+      "type": "telehealth",
+      "telehealth": {
+        "platform": "Zoom",
+        "meetingLink": "https://zoom.us/j/1234567890",
+        "meetingId": "123 456 7890"
+      }
+    },
+    "notes": "Patient requested video consultation",
+    "reminders": {
+      "email": true,
+      "sms": true,
+      "sentAt": ["2024-04-14T10:00:00Z"]
+    },
+    "createdAt": "2024-03-20T14:30:00Z",
+    "updatedAt": "2024-03-20T14:30:00Z"
+  }
+}
