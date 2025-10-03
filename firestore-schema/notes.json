@@ -1,0 +1,279 @@
+{
+  "collection": "notes",
+  "description": "Clinical notes and documentation created by healthcare providers during patient encounters. Supports SOAP notes and other clinical documentation formats.",
+  "documentId": "Auto-generated note ID",
+  "schema": {
+    "patientId": {
+      "type": "string",
+      "description": "Reference to patient document ID",
+      "required": true,
+      "indexed": true
+    },
+    "patientName": {
+      "type": "string",
+      "description": "Denormalized patient name",
+      "required": true
+    },
+    "providerId": {
+      "type": "string",
+      "description": "Reference to provider document ID who created the note",
+      "required": true,
+      "indexed": true
+    },
+    "providerName": {
+      "type": "string",
+      "description": "Denormalized provider name",
+      "required": true
+    },
+    "appointmentId": {
+      "type": "string",
+      "description": "Reference to related appointment (if applicable)",
+      "indexed": true
+    },
+    "noteType": {
+      "type": "string",
+      "enum": ["progress-note", "consultation", "procedure", "discharge", "prescription", "lab-result", "other"],
+      "required": true,
+      "indexed": true
+    },
+    "encounterDate": {
+      "type": "timestamp",
+      "description": "Date of patient encounter",
+      "required": true,
+      "indexed": true
+    },
+    "title": {
+      "type": "string",
+      "description": "Note title or brief description",
+      "required": true
+    },
+    "content": {
+      "type": "object",
+      "description": "Structured note content (SOAP format)",
+      "fields": {
+        "subjective": {
+          "type": "string",
+          "description": "Patient's subjective complaints and symptoms"
+        },
+        "objective": {
+          "type": "string",
+          "description": "Objective findings from examination"
+        },
+        "assessment": {
+          "type": "string",
+          "description": "Clinical assessment and diagnosis"
+        },
+        "plan": {
+          "type": "string",
+          "description": "Treatment plan and follow-up"
+        },
+        "additionalNotes": {
+          "type": "string",
+          "description": "Any additional clinical notes"
+        }
+      }
+    },
+    "diagnoses": {
+      "type": "array",
+      "description": "ICD-10 codes and diagnoses",
+      "items": {
+        "type": "object",
+        "fields": {
+          "code": "string",
+          "description": "string"
+        }
+      }
+    },
+    "medications": {
+      "type": "array",
+      "description": "Medications prescribed or discussed",
+      "items": {
+        "type": "object",
+        "fields": {
+          "name": "string",
+          "dosage": "string",
+          "frequency": "string",
+          "instructions": "string"
+        }
+      }
+    },
+    "vitalSigns": {
+      "type": "object",
+      "description": "Patient vital signs",
+      "fields": {
+        "bloodPressure": {
+          "type": "object",
+          "fields": {
+            "systolic": "number",
+            "diastolic": "number"
+          }
+        },
+        "heartRate": {
+          "type": "number",
+          "description": "Beats per minute"
+        },
+        "temperature": {
+          "type": "number",
+          "description": "Temperature in Fahrenheit"
+        },
+        "respiratoryRate": {
+          "type": "number",
+          "description": "Breaths per minute"
+        },
+        "oxygenSaturation": {
+          "type": "number",
+          "description": "SpO2 percentage"
+        },
+        "weight": {
+          "type": "number",
+          "description": "Weight in pounds"
+        },
+        "height": {
+          "type": "number",
+          "description": "Height in inches"
+        }
+      }
+    },
+    "attachments": {
+      "type": "array",
+      "description": "References to attached documents, images, or files",
+      "items": {
+        "type": "object",
+        "fields": {
+          "fileName": "string",
+          "fileUrl": "string",
+          "fileType": "string",
+          "uploadedAt": "timestamp"
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "finalized", "amended", "archived"],
+      "default": "draft",
+      "indexed": true
+    },
+    "signature": {
+      "type": "object",
+      "description": "Provider signature information",
+      "fields": {
+        "signed": {
+          "type": "boolean",
+          "default": false
+        },
+        "signedAt": {
+          "type": "timestamp"
+        },
+        "signatureUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "amendments": {
+      "type": "array",
+      "description": "History of amendments to the note",
+      "items": {
+        "type": "object",
+        "fields": {
+          "amendedBy": "string",
+          "amendedAt": "timestamp",
+          "reason": "string",
+          "changes": "string"
+        }
+      }
+    },
+    "createdAt": {
+      "type": "timestamp",
+      "description": "Note creation timestamp",
+      "required": true,
+      "serverTimestamp": true,
+      "indexed": true
+    },
+    "updatedAt": {
+      "type": "timestamp",
+      "description": "Last update timestamp",
+      "required": true,
+      "serverTimestamp": true
+    }
+  },
+  "indexes": [
+    {
+      "fields": ["patientId", "createdAt"],
+      "order": ["ascending", "descending"]
+    },
+    {
+      "fields": ["providerId", "createdAt"],
+      "order": ["ascending", "descending"]
+    },
+    {
+      "fields": ["patientId", "encounterDate"],
+      "order": ["ascending", "descending"]
+    },
+    {
+      "fields": ["appointmentId"],
+      "order": "ascending"
+    },
+    {
+      "fields": ["noteType", "status", "createdAt"],
+      "order": ["ascending", "ascending", "descending"]
+    }
+  ],
+  "securityRules": {
+    "read": "Patients can read their own notes; providers can read notes for their patients",
+    "write": "Only the creating provider can edit notes; amendments tracked separately",
+    "create": "Providers only"
+  },
+  "sampleDocument": {
+    "patientId": "patient-doc-id-123",
+    "patientName": "John Doe",
+    "providerId": "provider-doc-id-456",
+    "providerName": "Dr. Sarah Smith",
+    "appointmentId": "appt-doc-id-789",
+    "noteType": "progress-note",
+    "encounterDate": "2024-03-15T09:00:00Z",
+    "title": "Annual Physical Examination",
+    "content": {
+      "subjective": "Patient reports feeling well overall. No acute complaints. Compliant with hypertension medication.",
+      "objective": "BP: 128/82, HR: 72, Temp: 98.6°F. General appearance: well-nourished, no acute distress. Heart: regular rate and rhythm. Lungs: clear to auscultation bilaterally.",
+      "assessment": "1. Essential hypertension - well controlled\n2. Health maintenance",
+      "plan": "1. Continue Lisinopril 10mg daily\n2. Routine lab work ordered (CBC, CMP, lipid panel)\n3. Follow-up in 6 months or sooner if concerns arise\n4. Encouraged regular exercise and healthy diet",
+      "additionalNotes": "Patient questions about cholesterol answered. Discussed importance of medication compliance."
+    },
+    "diagnoses": [
+      {
+        "code": "I10",
+        "description": "Essential (primary) hypertension"
+      }
+    ],
+    "medications": [
+      {
+        "name": "Lisinopril",
+        "dosage": "10mg",
+        "frequency": "Once daily",
+        "instructions": "Take in the morning with or without food"
+      }
+    ],
+    "vitalSigns": {
+      "bloodPressure": {
+        "systolic": 128,
+        "diastolic": 82
+      },
+      "heartRate": 72,
+      "temperature": 98.6,
+      "respiratoryRate": 16,
+      "oxygenSaturation": 98,
+      "weight": 185,
+      "height": 70
+    },
+    "attachments": [],
+    "status": "finalized",
+    "signature": {
+      "signed": true,
+      "signedAt": "2024-03-15T09:45:00Z",
+      "signatureUrl": "https://storage.googleapis.com/cordia/signatures/dr-smith-sig.png"
+    },
+    "amendments": [],
+    "createdAt": "2024-03-15T09:30:00Z",
+    "updatedAt": "2024-03-15T09:45:00Z"
+  }
+}

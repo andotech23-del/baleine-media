@@ -1,0 +1,183 @@
+{
+  "collection": "patients",
+  "description": "Stores patient demographic information, medical history, and profile data. Each document represents a unique patient in the system.",
+  "documentId": "Auto-generated or custom patient ID",
+  "schema": {
+    "userId": {
+      "type": "string",
+      "description": "Firebase Auth UID linking to user authentication",
+      "required": true,
+      "indexed": true
+    },
+    "email": {
+      "type": "string",
+      "description": "Patient's email address",
+      "required": true,
+      "indexed": true,
+      "unique": true
+    },
+    "profile": {
+      "type": "object",
+      "description": "Patient demographic information",
+      "required": true,
+      "fields": {
+        "firstName": {
+          "type": "string",
+          "required": true
+        },
+        "lastName": {
+          "type": "string",
+          "required": true
+        },
+        "dateOfBirth": {
+          "type": "timestamp",
+          "required": true,
+          "indexed": true
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["male", "female", "other", "prefer-not-to-say"],
+          "required": true
+        },
+        "phoneNumber": {
+          "type": "string",
+          "required": true
+        },
+        "address": {
+          "type": "object",
+          "fields": {
+            "street": "string",
+            "city": "string",
+            "state": "string",
+            "zipCode": "string",
+            "country": "string"
+          }
+        }
+      }
+    },
+    "medicalInfo": {
+      "type": "object",
+      "description": "Medical history and health information",
+      "fields": {
+        "bloodType": {
+          "type": "string",
+          "enum": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
+        },
+        "allergies": {
+          "type": "array",
+          "items": "string",
+          "description": "List of known allergies"
+        },
+        "medications": {
+          "type": "array",
+          "items": "string",
+          "description": "Current medications"
+        },
+        "conditions": {
+          "type": "array",
+          "items": "string",
+          "description": "Chronic conditions and diagnoses"
+        },
+        "emergencyContact": {
+          "type": "object",
+          "fields": {
+            "name": "string",
+            "relationship": "string",
+            "phoneNumber": "string"
+          }
+        }
+      }
+    },
+    "insurance": {
+      "type": "object",
+      "description": "Insurance information",
+      "fields": {
+        "provider": "string",
+        "policyNumber": "string",
+        "groupNumber": "string",
+        "subscriberId": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "inactive", "archived"],
+      "default": "active",
+      "indexed": true
+    },
+    "createdAt": {
+      "type": "timestamp",
+      "description": "Account creation timestamp",
+      "required": true,
+      "serverTimestamp": true
+    },
+    "updatedAt": {
+      "type": "timestamp",
+      "description": "Last update timestamp",
+      "required": true,
+      "serverTimestamp": true
+    },
+    "lastVisit": {
+      "type": "timestamp",
+      "description": "Last appointment date",
+      "indexed": true
+    }
+  },
+  "indexes": [
+    {
+      "fields": ["email"],
+      "unique": true
+    },
+    {
+      "fields": ["status", "lastVisit"],
+      "order": "descending"
+    },
+    {
+      "fields": ["profile.dateOfBirth"],
+      "order": "ascending"
+    }
+  ],
+  "securityRules": {
+    "read": "Authenticated users can read their own patient document only",
+    "write": "Patients can update their own profile; providers with proper permissions can update patient records",
+    "create": "System-level creation during registration"
+  },
+  "sampleDocument": {
+    "userId": "firebase-auth-uid-12345",
+    "email": "john.doe@example.com",
+    "profile": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "dateOfBirth": "1985-06-15T00:00:00Z",
+      "gender": "male",
+      "phoneNumber": "+1-555-123-4567",
+      "address": {
+        "street": "123 Main St",
+        "city": "Boston",
+        "state": "MA",
+        "zipCode": "02101",
+        "country": "USA"
+      }
+    },
+    "medicalInfo": {
+      "bloodType": "A+",
+      "allergies": ["Penicillin", "Peanuts"],
+      "medications": ["Lisinopril 10mg"],
+      "conditions": ["Hypertension"],
+      "emergencyContact": {
+        "name": "Jane Doe",
+        "relationship": "Spouse",
+        "phoneNumber": "+1-555-987-6543"
+      }
+    },
+    "insurance": {
+      "provider": "Blue Cross Blue Shield",
+      "policyNumber": "BCBS123456789",
+      "groupNumber": "GRP001",
+      "subscriberId": "SUB123456"
+    },
+    "status": "active",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-03-20T14:45:00Z",
+    "lastVisit": "2024-03-15T09:00:00Z"
+  }
+}

@@ -1,0 +1,279 @@
+{
+  "collection": "providers",
+  "description": "Stores healthcare provider information including credentials, specializations, and availability. Each document represents a unique healthcare provider.",
+  "documentId": "Auto-generated or custom provider ID",
+  "schema": {
+    "userId": {
+      "type": "string",
+      "description": "Firebase Auth UID linking to user authentication",
+      "required": true,
+      "indexed": true
+    },
+    "email": {
+      "type": "string",
+      "description": "Provider's email address",
+      "required": true,
+      "indexed": true,
+      "unique": true
+    },
+    "profile": {
+      "type": "object",
+      "description": "Provider demographic and professional information",
+      "required": true,
+      "fields": {
+        "firstName": {
+          "type": "string",
+          "required": true
+        },
+        "lastName": {
+          "type": "string",
+          "required": true
+        },
+        "title": {
+          "type": "string",
+          "description": "Professional title (e.g., MD, DO, NP, PA)",
+          "required": true
+        },
+        "phoneNumber": {
+          "type": "string",
+          "required": true
+        },
+        "bio": {
+          "type": "string",
+          "description": "Professional biography"
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "Profile photo URL"
+        }
+      }
+    },
+    "credentials": {
+      "type": "object",
+      "description": "Professional credentials and certifications",
+      "required": true,
+      "fields": {
+        "licenseNumber": {
+          "type": "string",
+          "required": true
+        },
+        "licenseState": {
+          "type": "string",
+          "required": true
+        },
+        "npiNumber": {
+          "type": "string",
+          "description": "National Provider Identifier",
+          "required": true
+        },
+        "boardCertifications": {
+          "type": "array",
+          "items": "string",
+          "description": "List of board certifications"
+        },
+        "medicalSchool": {
+          "type": "string"
+        },
+        "graduationYear": {
+          "type": "number"
+        }
+      }
+    },
+    "specialization": {
+      "type": "array",
+      "items": "string",
+      "description": "Medical specializations",
+      "required": true,
+      "indexed": true,
+      "examples": ["Primary Care", "Cardiology", "Dermatology", "Psychiatry"]
+    },
+    "languages": {
+      "type": "array",
+      "items": "string",
+      "description": "Languages spoken",
+      "default": ["English"]
+    },
+    "workSchedule": {
+      "type": "object",
+      "description": "Provider's weekly availability",
+      "fields": {
+        "monday": {
+          "type": "object",
+          "fields": {
+            "available": "boolean",
+            "startTime": "string",
+            "endTime": "string"
+          }
+        },
+        "tuesday": {
+          "type": "object",
+          "fields": {
+            "available": "boolean",
+            "startTime": "string",
+            "endTime": "string"
+          }
+        },
+        "wednesday": {
+          "type": "object",
+          "fields": {
+            "available": "boolean",
+            "startTime": "string",
+            "endTime": "string"
+          }
+        },
+        "thursday": {
+          "type": "object",
+          "fields": {
+            "available": "boolean",
+            "startTime": "string",
+            "endTime": "string"
+          }
+        },
+        "friday": {
+          "type": "object",
+          "fields": {
+            "available": "boolean",
+            "startTime": "string",
+            "endTime": "string"
+          }
+        },
+        "saturday": {
+          "type": "object",
+          "fields": {
+            "available": "boolean",
+            "startTime": "string",
+            "endTime": "string"
+          }
+        },
+        "sunday": {
+          "type": "object",
+          "fields": {
+            "available": "boolean",
+            "startTime": "string",
+            "endTime": "string"
+          }
+        }
+      }
+    },
+    "acceptingNewPatients": {
+      "type": "boolean",
+      "default": true,
+      "indexed": true
+    },
+    "rating": {
+      "type": "object",
+      "description": "Provider ratings and reviews",
+      "fields": {
+        "average": {
+          "type": "number",
+          "min": 0,
+          "max": 5
+        },
+        "count": {
+          "type": "number",
+          "default": 0
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "inactive", "on-leave", "archived"],
+      "default": "active",
+      "indexed": true
+    },
+    "createdAt": {
+      "type": "timestamp",
+      "description": "Account creation timestamp",
+      "required": true,
+      "serverTimestamp": true
+    },
+    "updatedAt": {
+      "type": "timestamp",
+      "description": "Last update timestamp",
+      "required": true,
+      "serverTimestamp": true
+    }
+  },
+  "indexes": [
+    {
+      "fields": ["email"],
+      "unique": true
+    },
+    {
+      "fields": ["specialization", "acceptingNewPatients", "status"],
+      "order": "ascending"
+    },
+    {
+      "fields": ["status", "rating.average"],
+      "order": ["ascending", "descending"]
+    }
+  ],
+  "securityRules": {
+    "read": "All authenticated users can read provider profiles (public information)",
+    "write": "Providers can update their own profile; admin users can update any provider profile",
+    "create": "Admin-level creation only"
+  },
+  "sampleDocument": {
+    "userId": "firebase-auth-uid-67890",
+    "email": "dr.smith@cordiahealth.com",
+    "profile": {
+      "firstName": "Sarah",
+      "lastName": "Smith",
+      "title": "MD",
+      "phoneNumber": "+1-555-234-5678",
+      "bio": "Board-certified family medicine physician with 10 years of experience in primary care.",
+      "photoUrl": "https://storage.googleapis.com/cordia/providers/dr-smith.jpg"
+    },
+    "credentials": {
+      "licenseNumber": "MD123456",
+      "licenseState": "MA",
+      "npiNumber": "1234567890",
+      "boardCertifications": ["American Board of Family Medicine"],
+      "medicalSchool": "Harvard Medical School",
+      "graduationYear": 2012
+    },
+    "specialization": ["Primary Care", "Family Medicine"],
+    "languages": ["English", "Spanish"],
+    "workSchedule": {
+      "monday": {
+        "available": true,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      "tuesday": {
+        "available": true,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      "wednesday": {
+        "available": true,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      "thursday": {
+        "available": true,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      "friday": {
+        "available": true,
+        "startTime": "09:00",
+        "endTime": "14:00"
+      },
+      "saturday": {
+        "available": false
+      },
+      "sunday": {
+        "available": false
+      }
+    },
+    "acceptingNewPatients": true,
+    "rating": {
+      "average": 4.8,
+      "count": 127
+    },
+    "status": "active",
+    "createdAt": "2023-11-01T08:00:00Z",
+    "updatedAt": "2024-03-20T10:30:00Z"
+  }
+}
